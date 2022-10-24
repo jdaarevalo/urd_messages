@@ -1,0 +1,5 @@
+samconfig.toml
+.DS_Store
+__pycache__/*
+.aws-sam
+local-dynamodb-data/*

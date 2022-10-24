@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Slack Messaging integration
+
+Parameters:
+  DynamoDBTableName:
+    Type: String
+    Default: slack_messages_history
+
+Resources:
+  # Define slack-messages Lambda function
+  SlackMessagingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: slack_messaging/
+      Handler: lambda.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      AutoPublishAlias: live
+      Environment:
+        Variables:
+          SLACK_BOT_USER_OAUTH_TOKEN: "{{resolve:ssm:SLACK_BOT_USER_OAUTH_TOKEN:1}}"
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTableName
+      Events:
+        SlackMessagingApi:
+          Type: Api
+          Properties:
+            Path: /send_message
+            Method: post
+      Tracing: Active
+      Layers:
+        - !Ref libs
+  libs:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: lambda-dependencies
+      Description: Dependencies for Lambda, include slack_sdk
+      ContentUri: libs/
+
+  myDynamoDBTable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      TableName: !Ref DynamoDBTableName
+      KeySchema: 
+        - 
+          AttributeName: "ts"
+          KeyType: "HASH"
+        - 
+          AttributeName: "timestamp"
+          KeyType: "RANGE"
+      AttributeDefinitions: 
+        - 
+          AttributeName: "ts"
+          AttributeType: "S"
+        - 
+          AttributeName: "timestamp"
+          AttributeType: "S"
+        - 
+          AttributeName: "channel"
+          AttributeType: "S"
+        - 
+          AttributeName: "thread_group_key"
+          AttributeType: "S"
+        - 
+          AttributeName: "thread_ts"
+          AttributeType: "S"
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  SlackMessagingFunction:
+    Description: "SlackMessagingFunction Lambda Function ARN"
+    Value: !GetAtt SlackMessagingFunction.Arn
+  SlackMessagingApi:
+    Description: "API Gateway endpoint URL for Slack Messaging Function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/send_message/"
+
+
+
+
+
