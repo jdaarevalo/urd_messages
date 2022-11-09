@@ -9,6 +9,8 @@ Parameters:
 
 Resources:
   # Define slack-messages Lambda function
+  
+  
   SlackMessagingFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -44,26 +46,17 @@ Resources:
       TableName: !Ref DynamoDBTableName
       KeySchema: 
         - 
-          AttributeName: "ts"
+          AttributeName: "thread_group_key"
           KeyType: "HASH"
         - 
-          AttributeName: "timestamp"
+          AttributeName: "ts"
           KeyType: "RANGE"
       AttributeDefinitions: 
-        - 
-          AttributeName: "ts"
-          AttributeType: "S"
-        - 
-          AttributeName: "timestamp"
-          AttributeType: "S"
-        - 
-          AttributeName: "channel"
-          AttributeType: "S"
         - 
           AttributeName: "thread_group_key"
           AttributeType: "S"
         - 
-          AttributeName: "thread_ts"
+          AttributeName: "ts"
           AttributeType: "S"
 
 Outputs:

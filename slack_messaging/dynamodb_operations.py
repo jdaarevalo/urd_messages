@@ -4,13 +4,13 @@ import time
 import logging
 from datetime import datetime
 from decimal import Decimal
-
-## TODO: Refactor to create a lib to use in other projects
+from boto3.dynamodb.conditions import Key, Attr
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-if local:
+
+if os.environ.get("AWS_SAM_LOCAL"):
     dynamodb = boto3.resource('dynamodb',endpoint_url='http://localhost:8000')
 else:
     dynamodb = boto3.resource('dynamodb')
@@ -18,8 +18,17 @@ else:
 table_name = os.environ.get("DYNAMODB_TABLE_NAME")
 table = dynamodb.Table(table_name)
 
-def get_last_item_where(item):
-    return item
+## TODO
+def get_last_item_where(thread_group_key, channel):
+    response = table.query(
+        KeyConditionExpression = Key('thread_group_key').eq(thread_group_key),
+        FilterExpression = Attr('channel').eq(channel),
+        Limit = 1,
+        ScanIndexForward=False
+    )
+    return response['Items']
+
+
 
 def get_item(item, data_response={}, errors={}):
     logger.info("get project_item with item: {}".format(item))
