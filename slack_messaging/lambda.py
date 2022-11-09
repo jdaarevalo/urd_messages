@@ -11,15 +11,7 @@ from slack_sdk import WebClient
 from dynamodb_operations import get_last_item_where
 
 
-
-STATUS_DEFAULT_COLOR = "#ffcc00"
-STATUS_ERROR = "error"
-STATUS_START = "start"
-STATUS_FINISH = "finish"
-STATUS_COLORS = {STATUS_START: "#0099cc", STATUS_ERROR: "#cc3300", STATUS_FINISH: "#006633"}
-NO_ERRORS_MESSAGE = " " #empty space required by Slack to delivery the message
-
-BODY_KEYS_REQUIRED = set(['channel', 'thread_group_key', 'template', 'message_keys'])
+BODY_KEYS_REQUIRED = set(['channel', 'template', 'message_keys'])
 
 slack_bot_user_oauth_token = os.environ.get("SLACK_BOT_USER_OAUTH_TOKEN")
 slack_client = WebClient(slack_bot_user_oauth_token)
@@ -28,26 +20,24 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
-	print("#"*100)
-	print(type(event))
-	print("#"*100)
-
 	logger.info('## Invoke function with event %s', event)
-	data_body = event.get("body", "{}")	
+	data_body = event.get("body", "{}")
 	json_body = json.loads(data_body)
 
-	logger.info('## body_event %s', json_body)
 	# Validate body structure and check possible errors
 	errors_body = validate_body_structure(json_body)
 	if errors_body:
 		return { "statusCode": 400, "status": "error", "body": json.dumps(errors_body) }
-	
 	# Fetch thread_ts if exist and if is thread_group_key is a parameter
 	channel = json_body.get('channel')
-	thread_group_key = json_body.get('thread_group_key')	
-	thread_ts = fetch_ts(thread_group_key, channel) if thread_group_key else None
+	thread_group_key = json_body.get('thread_group_key')
+	#thread_ts = fetch_ts(thread_group_key, channel) if thread_group_key else None
+	thread_ts = fetch_ts("pruebas_1", "channel_3") if thread_group_key else None
 
-	
+	print("#"*100)
+	print(thread_group_key)
+	print(thread_ts)
+	print("#"*100)
 	## traer template de acuerdo al nombre y formatear
 	#result = send_slack_message(json_body, thread_ts)
 
@@ -55,7 +45,7 @@ def lambda_handler(event, context):
 	# guardar thread_ts en dynamo if json_body.get('thread_group_key')
 
 	# thread_ts = result.data['ts']
-	#return thread_ts
+	
 	return {
         "statusCode": 200,
         "body": '{"status":"success", "code":200, "message": "Message delivered"}'
@@ -97,6 +87,7 @@ def validate_body_structure(json_body, errors=[]):
 		return {'status': "error", 'code': 400, 'errors': errors }
 
 def fetch_ts(thread_group_key, channel):
+	print("$"*100)
 	list_item = get_last_item_where(thread_group_key, channel)
 	if list_item:
 		return list_item[0]['ts']

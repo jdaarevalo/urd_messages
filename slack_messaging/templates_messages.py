@@ -1,3 +1,10 @@
+STATUS_DEFAULT_COLOR = "#ffcc00"
+STATUS_ERROR = "error"
+STATUS_START = "start"
+STATUS_FINISH = "finish"
+STATUS_COLORS = {STATUS_START: "#0099cc", STATUS_ERROR: "#cc3300", STATUS_FINISH: "#006633"}
+NO_ERRORS_MESSAGE = " " #empty space required by Slack to delivery the message
+
 REPORT_STATUS = """
     [
         {

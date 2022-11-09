@@ -9,23 +9,28 @@ from boto3.dynamodb.conditions import Key, Attr
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-
 if os.environ.get("AWS_SAM_LOCAL"):
     dynamodb = boto3.resource('dynamodb',endpoint_url='http://localhost:8000')
 else:
     dynamodb = boto3.resource('dynamodb')
-
 table_name = os.environ.get("DYNAMODB_TABLE_NAME")
 table = dynamodb.Table(table_name)
 
 ## TODO
 def get_last_item_where(thread_group_key, channel):
+    print("%"*100)
+    print(thread_group_key)
+    print(channel)
+
     response = table.query(
         KeyConditionExpression = Key('thread_group_key').eq(thread_group_key),
         FilterExpression = Attr('channel').eq(channel),
         Limit = 1,
         ScanIndexForward=False
     )
+    print(response)
+    print("%"*100)
+
     return response['Items']
 
 
