@@ -8,23 +8,6 @@ Parameters:
     Default: slack_messages_history
 
 Resources:
-  # Create the role with the resources
-  SlackMessagingRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"
-        - "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
   # Define slack-messages Lambda function
   SlackMessagingFunction:
     Type: AWS::Serverless::Function
@@ -35,7 +18,8 @@ Resources:
       Architectures:
         - x86_64
       AutoPublishAlias: live
-      Role: !GetAtt SlackMessagingRole.Arn
+      Policies: AmazonDynamoDBFullAccess
+      Timeout: 180
       Environment:
         Variables:
           SLACK_BOT_USER_OAUTH_TOKEN: "{{resolve:ssm:SLACK_BOT_USER_OAUTH_TOKEN:1}}"
