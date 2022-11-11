@@ -2,10 +2,37 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Slack Messaging integration
 
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: "dynamodb-local-python"
+    Description: "A simple PUT-GET implementation demonstration use of DynamoDB Local using SAM."
+    Author: "Ganesh Shankaran"
+    SpdxLicenseId: "Apache-2.0"
+    LicenseUrl: "LICENSE.txt"
+    ReadmeUrl: "README.md"
+    Labels: ['sam-dynamodb-local']
+    HomePageUrl: https://github.com/ganshan/sam-dynamodb-local
+    SemanticVersion: 0.0.1
+    SourceCodeUrl: https://github.com/ganshan/sam-dynamodb-local
+
+
+  
+
 Parameters:
   DynamoDBTableName:
     Type: String
     Default: slack_messages_history
+    Description: The DynamoDB table for storing slack threads information.
+
+  RegionName:
+    Type: String
+    Description: Default region for deployment.
+    Default: 'eu-west-1'
+
+  DevEnvName:
+    Type: String
+    Description: Developer environment where code is being executed (OSX, Windows, or Linux).
+    Default: 'OSX'
 
 Resources:
   # Define slack-messages Lambda function
@@ -24,6 +51,8 @@ Resources:
         Variables:
           SLACK_BOT_USER_OAUTH_TOKEN: "{{resolve:ssm:SLACK_BOT_USER_OAUTH_TOKEN:1}}"
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTableName
+          REGION_NAME: !Ref RegionName
+          DEV_ENV_NAME: !Ref DevEnvName
       Events:
         SlackMessagingApi:
           Type: Api

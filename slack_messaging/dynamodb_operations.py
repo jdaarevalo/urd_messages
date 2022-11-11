@@ -9,29 +9,43 @@ from boto3.dynamodb.conditions import Key, Attr
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-if os.environ.get("AWS_SAM_LOCAL"):
-    dynamodb = boto3.resource('dynamodb',endpoint_url='http://localhost:8000')
-else:
-    dynamodb = boto3.resource('dynamodb')
+dev_environment = os.environ.get('DEV_ENV_NAME')
+region_name = os.environ.get('REGION_NAME')
 table_name = os.environ.get("DYNAMODB_TABLE_NAME")
+
+# Check if executing locally or on AWS, and configure DynamoDB connection accordingly.
+if os.environ.get("AWS_SAM_LOCAL"):
+    # SAM LOCAL
+    if dev_environment == "OSX":
+        # Environment ins Mac OSX
+        dynamodb = boto3.resource('dynamodb', endpoint_url="http://docker.for.mac.localhost:8000/")
+    elif dev_environment == "Windows":
+        # Environment is Windows
+        dynamodb = boto3.resource('dynamodb', endpoint_url="http://docker.for.windows.localhost:8000/")
+    else:
+        # Environment is Linux
+        dynamodb = boto3.resource('dynamodb', endpoint_url="http://127.0.0.1:8000")
+else:
+    # AWS
+    dynamodb = boto3.resource('dynamodb', region_name=region_name)
+
 table = dynamodb.Table(table_name)
 
-## TODO
 def get_last_item_where(thread_group_key, channel):
-    print("%"*100)
-    print(thread_group_key)
-    print(channel)
-
+    logger.info('## dynamo filter where thread_group_key %s', thread_group_key)
     response = table.query(
         KeyConditionExpression = Key('thread_group_key').eq(thread_group_key),
         FilterExpression = Attr('channel').eq(channel),
         Limit = 1,
         ScanIndexForward=False
     )
-    print(response)
-    print("%"*100)
-
+    logger.info('## dynamo response %s', response)
     return response['Items']
+
+## TODO
+
+
+
 
 
 
