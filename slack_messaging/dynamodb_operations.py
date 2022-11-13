@@ -32,57 +32,25 @@ else:
 table = dynamodb.Table(table_name)
 
 def get_last_item_where(thread_group_key, channel):
-    logger.info('## dynamo filter where thread_group_key %s', thread_group_key)
+    logger.info('## Dynamo filter where thread_group_key %s', thread_group_key)
     response = table.query(
         KeyConditionExpression = Key('thread_group_key').eq(thread_group_key),
         FilterExpression = Attr('channel').eq(channel),
         Limit = 1,
         ScanIndexForward=False
     )
-    logger.info('## dynamo response %s', response)
+    logger.info('## Dynamo response %s', response)
     return response['Items']
 
-## TODO
-
 def put_item(thread_ts, channel, thread_group_key, message_result_ts):
-    item = {
-        'thread_group_key': thread_group_key,
-        'ts': message_result_ts,
-        'channel': channel,
-        'thread_ts': thread_ts
-        }
-    table.put_item(Item=item)
-
-
-
-
-def get_item(item, data_response={}, errors={}):
-    logger.info("get project_item with item: {}".format(item))
     try:
-        data_response = table.get_item(Key=item)["Item"]
+        item = {
+            'thread_group_key': thread_group_key,
+            'ts': message_result_ts,
+            'channel': channel,
+            'thread_ts': thread_ts
+            }
+        table.put_item(Item=item)
+        logger.info("created item with item: {}".format(item))
     except Exception as e:
-        logger.warning("Item doesn't exist")
-        errors = str(e)
-    
-    return data_response, errors
-
-def create_item(item, data_response={}, errors={}):
-    logger.info("create project_item with item: {}".format(item))
-    TABLE_KEYS_REQUIRED = set(["project_wave", "module_status", "triggered_by"])
-    
-    if not TABLE_KEYS_REQUIRED.issubset(set(item.keys())):
-        return {}, {"missing keys": TABLE_KEYS_REQUIRED }
-        
-    item["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    try:
-        data_response = table.put_item(Item=item)
-        logger.info("created project_item with item: {}".format(item))
-    except Exception as e:
-        logger.warning("Item couldn’t be created errors {}".format(str(e)))
-        errors = str(e)
-    return data_response, errors
-
-
-    
-
+        logger.error("## Error Item couldn’t be created errors {}".format(str(e)))
