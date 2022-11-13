@@ -44,7 +44,14 @@ def get_last_item_where(thread_group_key, channel):
 
 ## TODO
 
-
+def put_item(thread_ts, channel, thread_group_key, message_result_ts):
+    item = {
+        'thread_group_key': thread_group_key,
+        'ts': message_result_ts,
+        'channel': channel,
+        'thread_ts': thread_ts
+        }
+    table.put_item(Item=item)
 
 
 

@@ -8,7 +8,7 @@ import json
 import logging
 import templates_messages
 from slack_sdk import WebClient
-from dynamodb_operations import get_last_item_where
+from dynamodb_operations import get_last_item_where, put_item
 
 BODY_KEYS_REQUIRED = set(['channel', 'template', 'message_keys'])
 
@@ -20,7 +20,7 @@ logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
 	logger.info('## Invoke function with event %s', event)
-	
+
 	# Load body JSON for processing
 	try:
 		json_body = json.loads(event.get("body", "{}"))
@@ -31,69 +31,68 @@ def lambda_handler(event, context):
 	errors_body = validate_body_structure(json_body)
 	if errors_body:
 		return { "statusCode": 400, "status": "error", "body": json.dumps(errors_body) }
-	
+
+	# Compose attachments and format message
+	formated_message = compose_formated_message(json_body)
+	if formated_message.get("error", False):
+		return { "statusCode": 400, "status": "error", "body": formated_message["error"] }
+
 	# Fetch thread_ts if exist and if is thread_group_key is a parameter
 	channel = json_body.get('channel')
 	thread_group_key = json_body.get('thread_group_key')
-	#thread_ts = fetch_ts(thread_group_key, channel) if thread_group_key else None
-	thread_ts = fetch_ts("pruebas_1", "channel_3") if thread_group_key else None
+	thread_ts = fetch_ts(thread_group_key, channel) if thread_group_key else None
 
-	template = json_body.get('template')
-	print("#"*100)
-	print(thread_group_key)
-	print(thread_ts)
-	print("#"*100)
-	## traer template de acuerdo al nombre y formatear
-	#result = send_slack_message(json_body, thread_ts)
+	# Send slack message
+	send_message_result = send_slack_message(channel, formated_message, thread_ts)
+	if send_message_result.get("error", False):
+		return { "statusCode": 400, "status": "error", "body": send_message_result["error"] }
 
-
-	# guardar thread_ts en dynamo if json_body.get('thread_group_key')
-
-	# thread_ts = result.data['ts']
+	# Store message_result_ts in DynamoDB
+	message_result_ts = send_message_result['ts']
+	if json_body.get('thread_group_key'):
+		put_item(thread_ts, channel, thread_group_key, message_result_ts)
 	
 	return {
         "statusCode": 200,
         "body": '{"status":"success", "code":200, "message": "Message delivered"}'
+		""
     }
 
+### TODO
+# Create dynamo table if when docker-compose up
 
 def validate_body_structure(json_body, errors=[]):
 	if not json_body:
 		errors = ["body required"]	
-	
+
 	if not BODY_KEYS_REQUIRED.issubset(set(json_body.keys())):
 		errors = ["missing keys, check keys_required " + str(BODY_KEYS_REQUIRED)]
-	
+
 	#TODO: validate keys required by template, depends on the use case
 	if errors:
 		logger.error('## validate_body_structure return errors  %s', str(errors))
 		return {'status': "error", 'code': 400, 'errors': errors }
+
+def compose_formated_message(json_body):
+	template_name = json_body.get('template')
+	message_keys = json_body.get('message_keys')
+	format_template = getattr(templates_messages, 'format_'+template_name)
+	return format_template(message_keys)
 
 def fetch_ts(thread_group_key, channel):
 	list_item = get_last_item_where(thread_group_key, channel)
 	if list_item:
 		return list_item[0]['ts']
 
-
-
-
-
-def send_slack_message(json_body, thread_ts):
-	# Template from the event key
-	attachments = compose_attachments(json_body)
+def send_slack_message(channel, formated_message, thread_ts):
 	try:
    		# Call the chat.postMessage method using the WebClient
 		return slack_client.chat_postMessage(
-			channel=json_body['channel'], 
-			attachments=attachments,
+			channel=channel,
+			attachments=formated_message.get("attachments"),
+			text=formated_message.get("text"),
 			thread_ts=thread_ts
 		)
 	except Exception as error:
 		logger.error('## Error posting message:  %s', str(error))
 		return {"error": str(error)}
-
-## TODO
-def compose_attachments(json_body):
-	template = json_body["template"].upper()
-	# constant as variable
-	# templates_messages.(template).format()
