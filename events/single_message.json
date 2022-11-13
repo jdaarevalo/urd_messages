@@ -1,3 +1,0 @@
-{
-    "body":"{\"channel\":\"delivery_pipeline\",\"template\":\"report_status\",\"message_keys\":{\"module\":\"cleaning\",\"project_id\":1234,\"study_id\":1234,\"triggered_by\":\"TESTINGUSER\",\"status\":\"start\"}}"
-}

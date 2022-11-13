@@ -1,3 +1,3 @@
 {
-    "body": "{\"channel\":\"delivery_pipeline\",\"template\":\"report_status\",\"thread_group_key\":\"123_testing\",\"message_keys\":{\"module\":\"cleaning\",\"project_id\":1234,\"study_id\":1234,\"triggered_by\":\"TESTINGUSER\",\"status\":\"start\"}}"
+    "body": "{\"channel\":\"david_tests\",\"template\":\"report_status\",\"thread_group_key\":\"123_testing\",\"message_keys\":{\"module\":\"cleaning\",\"header\":\"Update Delivery Project ID: 123\",\"study_id\":1234,\"triggered_by\":\"TESTINGUSER\",\"status\":\"start\"}}"
 }
