@@ -6,9 +6,10 @@ Post in Slack a message
 import os
 import json
 import logging
+import dynamodb_operations
 import templates_messages
 from slack_sdk import WebClient
-from dynamodb_operations import get_last_item_where, put_item
+
 
 BODY_KEYS_REQUIRED = set(['channel', 'template', 'message_keys'])
 
@@ -50,16 +51,13 @@ def lambda_handler(event, context):
 	# Store message_result_ts in DynamoDB
 	message_result_ts = send_message_result['ts']
 	if json_body.get('thread_group_key'):
-		put_item(thread_ts, channel, thread_group_key, message_result_ts)
+		dynamodb_operations.put_item(thread_ts, channel, thread_group_key, message_result_ts)
 	
 	return {
         "statusCode": 200,
         "body": '{"status":"success", "code":200, "message": "Message delivered"}'
 		""
     }
-
-### TODO
-# Create dynamo table if when docker-compose up
 
 def validate_body_structure(json_body, errors=[]):
 	if not json_body:
@@ -68,7 +66,7 @@ def validate_body_structure(json_body, errors=[]):
 	if not BODY_KEYS_REQUIRED.issubset(set(json_body.keys())):
 		errors = ["missing keys, check keys_required " + str(BODY_KEYS_REQUIRED)]
 
-	#TODO: validate keys required by template, depends on the use case
+	#TODO: validate keys required by templates depending on the use case
 	if errors:
 		logger.error('## validate_body_structure return errors  %s', str(errors))
 		return {'status': "error", 'code': 400, 'errors': errors }
@@ -80,7 +78,7 @@ def compose_formated_message(json_body):
 	return format_template(message_keys)
 
 def fetch_ts(thread_group_key, channel):
-	list_item = get_last_item_where(thread_group_key, channel)
+	list_item = dynamodb_operations.get_last_item_where(thread_group_key, channel)
 	if list_item:
 		return list_item[0]['ts']
 

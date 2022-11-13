@@ -1,0 +1,15 @@
+{
+    "TableName": "slack_messages_history_2",
+    "KeySchema": [
+      { "AttributeName": "thread_group_key", "KeyType": "HASH" },
+      { "AttributeName": "ts", "KeyType": "RANGE" }
+    ],
+    "AttributeDefinitions": [
+      { "AttributeName": "thread_group_key", "AttributeType": "S" },
+      { "AttributeName": "ts", "AttributeType": "S" }
+    ],
+    "ProvisionedThroughput": {
+      "ReadCapacityUnits": 1,
+      "WriteCapacityUnits": 1
+    }
+}

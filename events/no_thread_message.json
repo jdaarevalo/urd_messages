@@ -1,0 +1,3 @@
+{
+    "body": "{\"channel\":\"david_tests\",\"template\":\"text_message\",\"message_keys\":{\"text\":\"Text message\"}}"
+}

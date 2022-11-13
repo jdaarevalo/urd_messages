@@ -4,19 +4,14 @@ Description: Slack Messaging integration
 
 Metadata:
   AWS::ServerlessRepo::Application:
-    Name: "dynamodb-local-python"
-    Description: "A simple PUT-GET implementation demonstration use of DynamoDB Local using SAM."
-    Author: "Ganesh Shankaran"
-    SpdxLicenseId: "Apache-2.0"
-    LicenseUrl: "LICENSE.txt"
+    Name: "urd_messages"
+    Description: "Implementation of ApiGateway, Lambda and Dynamo to send Slack messages in threads using SAM."
+    Author: "Jose Arevalo"
     ReadmeUrl: "README.md"
-    Labels: ['sam-dynamodb-local']
-    HomePageUrl: https://github.com/ganshan/sam-dynamodb-local
-    SemanticVersion: 0.0.1
-    SourceCodeUrl: https://github.com/ganshan/sam-dynamodb-local
-
-
-  
+    Labels: ['slack-sdk','dynamodb-local']
+    HomePageUrl: https://github.com/jdaarevalo/urd_messages
+    SemanticVersion: 0.1.0
+    SourceCodeUrl: https://github.com/jdaarevalo/urd_messages
 
 Parameters:
   DynamoDBTableName:

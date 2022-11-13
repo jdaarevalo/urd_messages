@@ -4,3 +4,4 @@ __pycache__/*
 */__pycache__/*
 .aws-sam
 local-dynamodb-data/*
+env_vars.json
