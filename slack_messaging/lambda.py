@@ -5,22 +5,21 @@ Post in Slack a message
 """
 import os
 import json
-import logging
 import dynamodb_operations
 import templates_messages
 from slack_sdk import WebClient
+from aws_lambda_powertools import Logger
 
+logger = Logger()
 
 BODY_KEYS_REQUIRED = set(['channel', 'template', 'message_keys'])
 
 slack_bot_user_oauth_token = os.environ.get("SLACK_BOT_USER_OAUTH_TOKEN")
 slack_client = WebClient(slack_bot_user_oauth_token)
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
+@logger.inject_lambda_context
 def lambda_handler(event, context):
-	logger.info('## Invoke function with event %s', event)
+	logger.info({"action":"invoke_lambda", "payload":{"event":event}})
 
 	# Load body JSON for processing
 	try:
@@ -68,7 +67,7 @@ def validate_body_structure(json_body, errors=[]):
 
 	#TODO: validate keys required by templates depending on the use case
 	if errors:
-		logger.error('## validate_body_structure return errors  %s', str(errors))
+		logger.error({"action":"validate_body_structure", "payload":{"error":str(errors)}})
 		return {'status': "error", 'code': 400, 'errors': errors }
 
 def compose_formated_message(json_body):
@@ -92,5 +91,5 @@ def send_slack_message(channel, formated_message, thread_ts):
 			thread_ts=thread_ts
 		)
 	except Exception as error:
-		logger.error('## Error posting message:  %s', str(error))
+		logger.error({"action":"send_slack_message", "payload":{"error":str(error)}})
 		return {"error": str(error)}

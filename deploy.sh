@@ -12,4 +12,5 @@ sam build
 sam deploy \
 --stack-name "${STACK_NAME}" \
 --region "${AWS_REGION}" \
---capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND  
+--resolve-s3 \
+--capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND

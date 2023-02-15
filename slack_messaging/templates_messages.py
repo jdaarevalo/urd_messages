@@ -1,6 +1,6 @@
-import logging
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+from aws_lambda_powertools import Logger
+
+logger = Logger()
 
 STATUS_DEFAULT_COLOR = "#ffcc00"
 STATUS_ERROR = "error"
@@ -55,7 +55,7 @@ def format_report_status(message_keys):
             ]
         }
     except Exception as error:
-        logger.error('## Error formating message:  %s', str(error))
+        logger.error({"action":"format_report_status", "payload":{"error":str(error)}})
         return {"error": str(error)}
 
 def format_text_message(message_keys):
@@ -64,5 +64,5 @@ def format_text_message(message_keys):
             "text": message_keys.get("text")
         }
     except Exception as error:
-        logger.error('## Error formating message:  %s', str(error))
+        logger.error({"action":"format_text_message", "payload":{"error":str(error)}})
         return {"error": str(error)}
