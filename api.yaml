@@ -1,0 +1,37 @@
+openapi: "3.0.1"
+info:
+  title: "Slack urd messaging"
+  version: "2023-05-12"
+paths:
+  /delivery_message:
+    post:
+      responses:
+        default:
+          description: "Response for POST /"
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        integrationSubtype: "SQS-SendMessage"
+        credentials:
+          Fn::GetAtt: [SlackMessagingApiRole, Arn]
+        connectionType: "INTERNET"
+        payloadFormatVersion: "1.0"
+        requestParameters:
+          MessageBody: "$request.body"
+          QueueUrl:
+            Ref: SlackMessagingSqsQueue
+        responseTemplates:
+          application/json: |
+            #set($inputRoot = $input.path('$'))
+            {
+              "MessageId" : "$inputRoot.SendMessageResult.MessageId",
+              "MD5OfMessageBody" : "$inputRoot.SendMessageResult.MD5OfMessageBody",
+              "RequestId" : "$inputRoot.ResponseMetadata.RequestId"
+            }
+x-amazon-apigateway-cors:
+  allowMethods:
+  - "*"
+  maxAge: 0
+  allowCredentials: false
+  allowOrigins:
+  - "*"
+x-amazon-apigateway-importexport-version: "1.0"

@@ -27,6 +27,79 @@ Parameters:
     Default: OSX
 
 Resources:
+##########################################################################
+#   HTTP API                                                             #
+##########################################################################
+  SlackMessagingApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      AccessLogSettings:
+        DestinationArn: !GetAtt SlackMessagingApiAccessLogs.Arn
+        Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","routeKey":"$context.routeKey", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: 'api.yaml'
+
+##########################################################################
+#   Cloudwatch Logs                                                       #
+##########################################################################
+  SlackMessagingApiAccessLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: HttpApi-SlackMessaging-Access-Logs
+      RetentionInDays: 1
+
+##########################################################################
+#   Roles                                                               #
+##########################################################################
+  SlackMessagingApiRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - apigateway.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+      - PolicyName: AllowSqsIntegration
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'sqs:SendMessage'
+                - 'sqs:GetQueueUrl'
+                - 'sqs:SendMessageBatch'
+              Resource: !GetAtt SlackMessagingSqsQueue.Arn
+            - Effect: Allow
+              Action:
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:DescribeLogGroups'
+                - 'logs:DescribeLogStreams'
+                - 'logs:PutLogEvents'
+                - 'logs:GetLogEvents'
+                - 'logs:FilterLogEvents'
+              Resource: !GetAtt SlackMessagingApiAccessLogs.Arn
+
+##########################################################################
+# SQS Queue
+##########################################################################
+  SlackMessagingSqsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 200
+      QueueName: "SlackMessagingSqsQueue"
+
+##########################################################################
+# Lambda Function
+##########################################################################
   SlackMessagingFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -53,30 +126,25 @@ Resources:
           Properties:
             Queue: !GetAtt SlackMessagingSqsQueue.Arn
             BatchSize: 10
-        SlackMessagingApi:
-          Type: Api
-          Properties:
-            Path: /send_message
-            Method: post
       Tracing: Active
       Layers:
         - arn:aws:lambda:eu-west-1:017000801446:layer:AWSLambdaPowertoolsPythonV2:16
-        - !Ref libs
-  
-  libs:
+        - !Ref SlackSDKLayer
+
+##########################################################################
+# Lambda Layer - SlackSDK
+##########################################################################
+  SlackSDKLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      LayerName: lambda-dependencies
+      LayerName: lambda-layer-slack-sdk
       Description: Dependencies for Lambda, include slack_sdk
       ContentUri: libs/
 
-  SlackMessagingSqsQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      VisibilityTimeout: 200
-      QueueName: "SlackMessagingSqsQueue"
-
-  SlackMessagingynamoDBTable:
+##########################################################################
+# DynamoDB Table
+##########################################################################
+  SlackMessagingDynamoDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Ref DynamoDBTableName
@@ -94,11 +162,13 @@ Resources:
         - AttributeName: ts
           AttributeType: S
 
+##########################################################################
+# Outputs
+##########################################################################
 Outputs:
   SlackMessagingFunction:
     Description: SlackMessagingFunction Lambda Function ARN
     Value: !Ref SlackMessagingFunctionAliaslive
   SlackMessagingApi:
     Description: API Gateway endpoint URL for Slack Messaging Function
-    Value:
-      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/send_message/
+    Value: !Sub "https://${SlackMessagingApi}.execute-api.${AWS::Region}.amazonaws.com/delivery_message"
